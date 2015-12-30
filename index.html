@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>hello midi</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <style type="text/css">
+        body {
+            padding-top: 20px;;
+        }
+        #midi-textarea {
+            display: block;
+            width: 98.9%;
+            height: 250px;
+            margin-bottom: 20px;;
+        }
+        .table th {
+            text-align: center;
+        }
+        .btn {
+            margin-left: 5px;
+            margin-top: -9px;
+        }
+        form {
+            margin-bottom: 10px;
+        }
+        #c-notes td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+
+    <div class="alert alert-success">MIDI RAW (hex string)</div>
+
+    <form onsubmit="downloadFile(); return false;">
+        <textarea id="midi-textarea" placeholder="Space and newline will be removed automatically."></textarea>
+        <input id="filename-input" type="text" placeholder="hello.mid" />
+        <a class="btn btn-success" onclick="downloadFile()">Download</a>
+    </form>
+
+    <div class="alert alert-success">MIDI Reference</div>
+
+    <table id="c-notes" class="table table-bordered">
+        <tr>
+            <th> </th>
+            <th colspan="11">C Notes</th>
+        </tr>
+        <tr>
+            <th>Note</th>
+            <td>C</td>
+            <td>C0</td>
+            <td>C1</td>
+            <td>C2</td>
+            <td>C3</td>
+            <td>C4 (Middle C)</td>
+            <td>C5</td>
+            <td>C6</td>
+            <td>C7</td>
+            <td>C8</td>
+            <td>C9</td>
+        </tr>
+        <tr>
+            <th>Hex</th>
+            <td>00</td>
+            <td>0C</td>
+            <td>18</td>
+            <td>24</td>
+            <td>30</td>
+            <td>3C</td>
+            <td>48</td>
+            <td>54</td>
+            <td>60</td>
+            <td>6C</td>
+            <td>78</td>
+        </tr>
+    </table>
+
+    <table class="table table-bordered">
+        <tr>
+            <th>&nbsp;</th>
+            <th colspan="14">Header Chunk</th>
+        </tr>
+        <tr>
+            <th>Byte Index</th>
+            <td>0</td>
+            <td>1</td>
+            <td>2</td>
+            <td>3</td>
+            <td>4</td>
+            <td>5</td>
+            <td>6</td>
+            <td>7</td>
+            <td>8</td>
+            <td>9</td>
+            <td>10</td>
+            <td>11</td>
+            <td>12</td>
+            <td>13</td>
+        </tr>
+        <tr>
+            <th>Byte Value</th>
+            <td>4D</td>
+            <td>54</td>
+            <td>68</td>
+            <td>64</td>
+
+            <td>00</td>
+            <td>00</td>
+            <td>00</td>
+            <td>06</td>
+
+            <td>00</td>
+            <td>01</td>
+            <td>00</td>
+            <td>01</td>
+
+            <td>00</td>
+            <td>80</td>
+        </tr>
+        <tr>
+            <th>Remark</th>
+            <td colspan="4">MThd</td>
+            <td colspan="4">Rest Byte Number</td>
+            <td colspan="2">File Format</td>
+            <td colspan="2">Track Number</td>
+            <td colspan="2">Ticks</td>
+        </tr>
+    </table>
+
+    <table class="table table-bordered">
+        <tr>
+            <th>&nbsp;</th>
+            <th colspan="13">Track Chunk</th>
+        </tr>
+        <tr>
+            <th>&nbsp;</th>
+            <th colspan="8">Header</th>
+            <th colspan="1">Data</th>
+            <th colspan="4">End</th>
+        </tr>
+        <tr>
+            <th>Byte Index</th>
+            <td>14</td>
+            <td>15</td>
+            <td>16</td>
+            <td>17</td>
+            <td>18</td>
+            <td>19</td>
+            <td>20</td>
+            <td>21</td>
+
+            <td>22 ... X</td>
+
+            <td>X+1</td>
+            <td>X+2</td>
+            <td>X+3</td>
+            <td>X+4</td>
+        </tr>
+        <tr>
+            <th>Byte Value</th>
+            <td>4D</td>
+            <td>54</td>
+            <td>72</td>
+            <td>68</td>
+
+            <td>00</td>
+            <td>00</td>
+            <td>00</td>
+            <td>0A</td>
+
+            <td>...</td>
+
+            <td>00</td>
+            <td>FF</td>
+            <td>2F</td>
+            <td>00</td>
+        </tr>
+        <tr>
+            <th>Remark</th>
+            <td colspan="4">MTrk</td>
+            <td colspan="4">Rest Byte Number</td>
+            <td colspan="1">Music</td>
+            <td colspan="4">Track End</td>
+        </tr>
+    </table>
+</div>
+
+<script src="FileSaver.js"></script>
+
+<script>
+    var midiTextArea = document.getElementById('midi-textarea');
+    var filenameInput = document.getElementById('filename-input');
+
+    function downloadFile() {
+        var filename = filenameInput.value.trim();
+
+        if (filename == '') {
+            alert('Please input a filename');
+            return;
+        }
+
+        var midiHex = midiTextArea.value;
+
+        // remove space and newline
+        midiHex = midiHex.replace(/ /g, '').replace(/\n/g, '');
+
+        console.log(midiHex);
+
+        var bytes = hex2bytes(midiHex);
+        var blob = new Blob([bytes], {type: 'application/octet-stream'});
+        saveAs(blob, filename);
+    }
+
+    function hex2bytes(hex) {
+        if (hex.length % 2 != 0) {
+            hex = '0' + hex;
+        }
+
+        var bytesLength = hex.length / 2;
+        var bytes = new Uint8Array(bytesLength);
+
+        for (var i = 0; i < bytes.length; i++) {
+            bytes[i] = parseInt(hex.substr(2 * i, 2), 16);
+        }
+
+        return bytes;
+    }
+</script>
+
+</body>
+</html>
