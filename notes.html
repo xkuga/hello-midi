@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Notes</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <style type="text/css">
+        body {
+            padding-top: 20px;;
+        }
+        .table th {
+            text-align: center;
+        }
+        .btn {
+            margin-left: 5px;
+            margin-top: -9px;
+        }
+        form {
+            margin-bottom: 10px;
+        }
+        #c-notes td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+
+    <div class="alert alert-success">Create 88 Notes</div>
+
+    <form onsubmit="createNotes(); return false;">
+        <input id="volume-input" type="text" placeholder="Volume(0-127)" />
+        <a class="btn btn-success" onclick="createNotes()">Download</a>
+    </form>
+
+</div>
+
+<script src="FileSaver.js"></script>
+
+<script>
+    var A0 = 0x15;
+    var volumeInput = document.getElementById('volume-input');
+
+    // letter => index
+    var letterIndex = {
+        'C': 1, 'D': 3, 'E': 5, 'F': 6, 'G': 8, 'A': 10, 'B': 12,
+        'Cb': 0, 'Db': 2, 'Eb': 4, 'Fb': 5, 'Gb': 7, 'Ab': 9, 'Bb': 11,
+        'C#': 2, 'D#': 4, 'E#': 6, 'F#': 7, 'G#': 9, 'A#': 11, 'B#': 13
+    };
+
+    // index => letters
+    var indexLetter = {
+        0: {'w': 'B', 'b': 'Cb'},
+        1: {'w': 'C', '#': 'B#'},
+        2: {'#': 'C#', 'b': 'Db'},
+        3: {'w': 'D'},
+        4: {'#': 'D#', 'b': 'Eb'},
+        5: {'w': 'E', 'b': 'Fb'},
+        6: {'w': 'F', '#': 'E#'},
+        7: {'#': 'F#', 'b': 'Gb'},
+        8: {'w': 'G'},
+        9: {'#': 'G#', 'b': 'Ab'},
+        10: {'w': 'A'},
+        11: {'#': 'A#', 'b': 'Bb'}
+    };
+
+    /**
+     * 获取音符的下标
+     *
+     * @param note 音符
+     * @returns {*}
+     */
+    function getNoteIndex(note) {
+        // start from 1(A0)
+        return 12 * note.slice(-1) + letterIndex[note.slice(0, -1)] - 9;
+    }
+
+    /**
+     * 获取下标对应的音符
+     *
+     * @param index 琴键下标，从1(A0)开始
+     * @param k 白键(w)还是黑键(b)
+     * @returns {*}
+     */
+    function getIndexNote(index, k) {
+        index = parseInt(index);
+        k = k || 'w';
+
+        var i = (index + 9) % 12;
+        var octave = Math.floor((index + 8) / 12);
+
+        if (i == 1 && k == '#') {
+            octave--;
+        } else if (i == 0 && k == 'b') {
+            octave++;
+        } else if (!indexLetter[i][k]) {
+            k = indexLetter[i]['w'] ? 'w' : indexLetter[i]['#'] ? '#' : 'b';
+        }
+
+        return indexLetter[i][k] + octave;
+    }
+
+    function createNotes() {
+        var volume = parseInt(volumeInput.value.trim());
+
+        if (!(volume > 0 && volume <= 127)) {
+            alert('0 < volume <= 127');
+            return;
+        }
+
+        for (var i = 1; i <= 88; i++) {
+            createNote(i, volume);
+        }
+    }
+
+    function createNote(noteIndex, volume) {
+        var noteHex = toHex(A0 + noteIndex - 1);
+        var volumeHex = toHex(volume);
+
+        var noteMidi = "4D 54 68 64 00 00 00 06 00 01 00 01 00 80\n"
+                + "4D 54 72 6B 00 00 00 08\n"
+                + "00 90 " + noteHex + ' ' + volumeHex + "\n"
+                + "00 FF 2F 00";
+
+        // remove space and newline
+        noteMidi = noteMidi.replace(/ /g, '').replace(/\n/g, '');
+
+        var bytes = hex2bytes(noteMidi);
+        var blob = new Blob([bytes], {type: 'application/octet-stream'});
+        var filename = getIndexNote(noteIndex) + '.mid';
+
+        saveAs(blob, filename);
+    }
+
+    function hex2bytes(hex) {
+        if (hex.length % 2 != 0) {
+            hex = '0' + hex;
+        }
+
+        var bytesLength = hex.length / 2;
+        var bytes = new Uint8Array(bytesLength);
+
+        for (var i = 0; i < bytes.length; i++) {
+            bytes[i] = parseInt(hex.substr(2 * i, 2), 16);
+        }
+
+        return bytes;
+    }
+
+    function toHex(dec) {
+        var hex = dec.toString(16).toUpperCase();
+        if (hex.length < 2) {
+            return '0' + hex;
+        }
+        return hex;
+    }
+</script>
+
+</body>
+</html>
