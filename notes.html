@@ -128,7 +128,7 @@
 
         var bytes = hex2bytes(noteMidi);
         var blob = new Blob([bytes], {type: 'application/octet-stream'});
-        var filename = getIndexNote(noteIndex) + '.mid';
+        var filename = getIndexNote(noteIndex, 'b') + '.mid';
 
         saveAs(blob, filename.toLowerCase());
     }
