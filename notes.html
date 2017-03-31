@@ -121,7 +121,7 @@
         var noteMidi = "4D 54 68 64 00 00 00 06 00 01 00 01 00 80\n"
                 + "4D 54 72 6B 00 00 00 08\n"
                 + "00 90 " + noteHex + ' ' + volumeHex + "\n"
-                + "00 FF 2F 00";
+                + volumeHex + " FF 2F 00";
 
         // remove space and newline
         noteMidi = noteMidi.replace(/ /g, '').replace(/\n/g, '');
